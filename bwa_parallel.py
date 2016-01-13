@@ -15,6 +15,17 @@ import time
 import datetime 
 
 
+def time_difference(sec):
+    if sec < 60:
+	    return "0 day(s), 0 hour(s), 0 minute(s), " + str(sec) + " second(s) [" + str(sec) + " seconds]"
+    else:
+        days = int(sec / 86400)
+        hours = int((sec / 3600) - (days * 24))
+        minutes = int((sec / 60) - (days * 1440) - (hours * 60))
+        seconds = int(sec % 60) 
+        return str(days) + " day(s), " + str(hours) + " hour(s), " + str(minutes) + " minute(s), " + str(seconds) + " second(s) [" + str(sec) + " seconds]"
+
+
 def write_array_file(path_to_bwa, path_to_samtools, path_to_reference, split_file, path_to_splitFiles, threads, splits):
 	'''create and write the array file containing the commands to map fastq files to a reference creating bams'''
 
@@ -596,6 +607,40 @@ for i in range(0, len(unpaired_files)):
                     print "removed"
 
 
+        cleanup_end = time.time()
+
+
+        dest = open(os.path.join(io_path, os.path.split(unpaired_files[i])[1].replace('_001.unpaired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
+
+        stats = "Stats to " + filename + ":\n"
+        ss = "Split size: " + str(split_size) + "\n"
+        sn = "Number of splits: " + str(split_number) + "\n"
+        mt = "Mapping threads: " + str(mapping_threads) + "\n"
+        ch = "Checks: " + str(checks) + "\n"
+        init = "Init duration: " + time_difference(init_end - init_start) + "\n"
+        splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
+        mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
+        mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
+        cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
+        total = "Total duration: " + time_difference(cleanup_end - init_start) + "\n"
+
+        dest.write(stats)
+        dest.write(ss)
+        dest.write(sn)
+        dest.write(mt)
+        dest.write(ch)
+        dest.write(init)
+        dest.write(splitten)
+        dest.write(mappen)
+        dest.write(mergen)
+        dest.write(cleanup)
+        dest.write(total)
+
+        dest.close()
+
+
+
+
 ### mapping paired-end files
 
 for i in range(0, len(forward_files)):
@@ -687,46 +732,43 @@ for i in range(0, len(forward_files)):
                     shutil.rmtree(base_path+"/sorted_mapped_files")
                     print "removed"
 
+
+        cleanup_end = time.time()
+
+
+        dest = open(os.path.join(io_path, os.path.split(forward_files[i])[1].replace('_R1_001.paired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
+
+        stats = "Stats to " + filename + ":\n"
+        ss = "Split size: " + str(split_size) + "\n"
+        sn = "Number of splits: " + str(split_number) + "\n"
+        mt = "Mapping threads: " + str(mapping_threads) + "\n"
+        ch = "Checks: " + str(checks) + "\n"
+        init = "Init duration: " + time_difference(init_end - init_start) + "\n"
+        splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
+        mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
+        mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
+        cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
+        total = "Total duration: " + time_difference(cleanup_end - init_start) + "\n"
+
+        dest.write(stats)
+        dest.write(ss)
+        dest.write(sn)
+        dest.write(mt)
+        dest.write(ch)
+        dest.write(init)
+        dest.write(splitten)
+        dest.write(mappen)
+        dest.write(mergen)
+        dest.write(cleanup)
+        dest.write(total)
+
+        dest.close()
+
+
+                    
+
     print "Job finished"
 
     
 
-cleanup_end = time.time()
 
-def time_difference(sec):
-    if sec < 60:
-	    return "0 day(s), 0 hour(s), 0 minute(s), " + str(sec) + " second(s) [" + str(sec) + " seconds]"
-    else:
-        days = int(sec / 86400)
-        hours = int((sec / 3600) - (days * 24))
-        minutes = int((sec / 60) - (days * 1440) - (hours * 60))
-        seconds = int(sec % 60) 
-        return str(days) + " day(s), " + str(hours) + " hour(s), " + str(minutes) + " minute(s), " + str(seconds) + " second(s) [" + str(sec) + " seconds]"
-
-dest = open(os.path.join(io_path, os.path.split(forward_files[0])[1].replace('_R1_001.paired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
-
-stats = "Stats to " + filename + ":\n"
-ss = "Split size: " + str(split_size) + "\n"
-sn = "Number of splits: " + str(split_number) + "\n"
-mt = "Mapping threads: " + str(mapping_threads) + "\n"
-ch = "Checks: " + str(checks) + "\n"
-init = "Init duration: " + time_difference(init_end - init_start) + "\n"
-splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
-mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
-mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
-cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
-total = "Total duration: " + time_difference(cleanup_end - init_start) + "\n"
-
-dest.write(stats)
-dest.write(ss)
-dest.write(sn)
-dest.write(mt)
-dest.write(ch)
-dest.write(init)
-dest.write(splitten)
-dest.write(mappen)
-dest.write(mergen)
-dest.write(cleanup)
-dest.write(total)
-
-dest.close()
