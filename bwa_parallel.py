@@ -13,6 +13,13 @@ import shutil
 from subprocess import call, Popen, PIPE
 import time
 import datetime 
+from itertools import izip_longest
+
+def grouper(n, iterable, fillvalue=None):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
+    args = [iter(iterable)] * n
+    return izip_longest(fillvalue=fillvalue, *args)
 
 
 def time_difference(sec):
@@ -144,7 +151,7 @@ def mergeBams(path_to_samtools, split_file, mappedFilesList ,array_job_ID):
     return final_file
 
 def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, checks = True, chunk = 4):
-    """splits fastq files in mappable chunks. for unpaired reads, leave reverse_file empty"""
+    """splits fastq files in mappable chunks. for unpaired reads, leave reverse_file empty."""
     os.chdir(split_dir) # cd to the directory where the split files will be created
 
     unpaired = False
@@ -182,7 +189,7 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
             dest2 = None
 
             files_already_split = False
-
+### calculate split length/ number of lines for each split file
             if split_size > 0 and split_number > 1: 
                 print "You have to choose between -s and -n option"
                 sys.exit()
@@ -193,22 +200,24 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
             elif split_number > 0:
                 files_already_split = False
                 print "Calculating file length"
-                cmd = "wc -l " + forward_file
+                cmd = "wc -l " + forward_file # fastest way
                 #print cmd
                 p = Popen(cmd, stdout=PIPE, shell=True)
                 p.wait()
                 out, err = p.communicate()
                 filelength = int(out.split(" ")[0])
-                div = filelength / split_number
+                div = filelength / split_number # div =number of lines per split file
                 print "filelength: " + str(filelength)
+                print "lines per split file: " + str(div)
                 if div < chunk:
                     splitLen = chunk
                 elif div % chunk == 0:
                     splitLen = div
                 else:
-                    mod = div % chunk
-                    add = chunk - mod
-                    splitLen = div + add
+                    #mod = div % chunk
+                    #add = chunk - mod
+                    #splitLen = div + add
+                    splitLen = div + chunk
             else:
                 print "You have to specify -s or -n (positive int value)"
                 sys.exit()
@@ -245,7 +254,7 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
             elif split_number > 0:
                 files_already_split = False
                 print "Calculating file length"
-                cmd = "wc -l " + forward_file
+                cmd = "wc -l " + forward_file # doesn't get any faster than that
                 #print cmd
                 p = Popen(cmd, stdout=PIPE, shell=True)
                 p.wait()
@@ -258,9 +267,10 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
                 elif div % chunk == 0:
                     splitLen = div
                 else:
-                    mod = div % chunk
-                    add = chunk - mod
-                    splitLen = div + add
+                    #mod = div % chunk
+                    #add = chunk - mod
+                    #splitLen = div + add
+                    splitLen = div + chunk
             else:
                 print "You have to specify -s or -n (positive int value)"
                 sys.exit()
@@ -268,7 +278,7 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
 
     # check optional (handle with care): 
 
-    if checks and files_already_split == False and unpaired == False:
+    if checks == True and files_already_split == False and unpaired == False:
         for line1 in input1:
             line2 = input2.readline()
             if count % chunk == 0:
@@ -358,7 +368,8 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
 
 
 """ This script starts bwa mem for all Fastq files in the folder given in base_path. 
-The Files have to be named in standard GA2x or Hiseq format i.e. Name_NoIndex_L001_R1_001.fastq. """
+The Files have to be named in standard GA2x or Hiseq format i.e. Name_NoIndex_L001_R1_001.fastq. Splitting the files
+seems to be the bottleneck."""
 
 
 init_start = time.time()
@@ -371,10 +382,10 @@ parser.add_option('-F', '--pairedfilter', dest="pairedfilter", type="string", de
 parser.add_option('-f', '--unpairedfilter', dest="unpairedfilter", type="string", default='*.unpaired.fastq', help='Filter for unpaired reads raw-data files by filename, if you do not want all the files contained in the folder specified in -P, allows regular expressions')
 parser.add_option('-R', '--reference', dest="reference", type="string", default="./", help='the reference as fasta file')
 parser.add_option('-t', '--mappingthreads', dest="mappingthreads", type="int", default=1, help='number of threads bwa should use')
-parser.add_option('-c', action="store_false", dest="checks", default=True, help="disable fastq files correctness check (handle with care)")
+parser.add_option('-c', action="store_true", dest="checks", default=False, help="enable fastq files correctly paired check ")
 parser.add_option('-e', '--errorLog', dest="errorLog", type="string", default="./", help='Folder containing the cluster error log')
 parser.add_option('-o', '--outLog', dest="outLog", type="string", default="./", help='Folder containing the cluster output log')
-parser.add_option('-s', '--splitsize', dest="splitsize", type="int", help='size of each split')
+parser.add_option('-s', '--splitsize', dest="splitsize", type="int", help='size of each split, recommended over -n for speed')
 parser.add_option('-n', '--splitnumber', dest="splitnumber", type="int", default=1, help='number of splits')
 parser.add_option('-T', action="store_true", dest="test", default=False, help="enter testing mode for evaluation (handle with care)")
 
