@@ -607,7 +607,7 @@ for i in range(0, len(unpaired_files)):
     cleanup_end = time.time()
 
 
-    dest = open(os.path.join(io_path, os.path.split(unpaired_files[i])[1].replace('_001.unpaired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
+    dest = open(os.path.join(io_path, os.path.split(unpaired_files[i])[1].replace('_001.unpaired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.unpaired.txt")), 'w')
 
     stats = "Stats to " + filename + ":\n"
     ss = "Split size: " + str(split_size) + "\n"
@@ -733,7 +733,7 @@ for i in range(0, len(forward_files)):
     cleanup_end = time.time()
 
 
-    dest = open(os.path.join(io_path, os.path.split(forward_files[i])[1].replace('_R1_001.paired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
+    dest = open(os.path.join(io_path, os.path.split(forward_files[i])[1].replace('_001.paired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.paired.txt")), 'w')
 
     stats = "Stats to " + filename + ":\n"
     ss = "Split size: " + str(split_size) + "\n"
