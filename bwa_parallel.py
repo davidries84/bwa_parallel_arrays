@@ -467,8 +467,8 @@ if forward_files:
 unpaired_files=[]
 # list of the forward reads containing fastq files to process with trimmomatic
 unpaired_files=glob.glob(os.path.join(io_path, unpairedfilter))
-print "Unpaired files found: " + unpaired_files
-#print unpaired_files
+print "Unpaired files found: " 
+print unpaired_files
 
 # check for already existing bam files
 for filename in reversed(unpaired_files):
