@@ -462,9 +462,6 @@ if forward_files:
 
 
 
-final_file = split_file.replace('_001.unpaired.fastq','_unpaired.bam')
-        
-
 #create list of unpaired files
 
 unpaired_files=[]
