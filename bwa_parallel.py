@@ -437,7 +437,7 @@ forward_files=glob.glob(os.path.join(io_path, pairedfilter))
 # check for already existing bam files
 for filename in reversed(forward_files):
     if os.path.exists(filename.replace('_R1_001.paired.fastq','_paired.bam')):
-        print "mapped file for " + filename + "already found"
+        print "mapped file for " + filename + " already found"
         forward_files.remove(filename)
 
 
@@ -472,7 +472,7 @@ print unpaired_files
 
 # check for already existing bam files
 for filename in reversed(unpaired_files):
-    if os.path.exists(filename.replace('_R1_001.paired.fastq','_paired.bam')):
+    if os.path.exists(filename.replace('_R1_001.unpaired.fastq','_paired.bam')):
         print "mapped file for " + filename + "already found"
         unpaired_files.remove(filename)
 
