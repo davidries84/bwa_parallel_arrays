@@ -607,36 +607,36 @@ for i in range(0, len(unpaired_files)):
                     print "removed"
 
 
-        cleanup_end = time.time()
+    cleanup_end = time.time()
 
 
-        dest = open(os.path.join(io_path, os.path.split(unpaired_files[i])[1].replace('_001.unpaired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
+    dest = open(os.path.join(io_path, os.path.split(unpaired_files[i])[1].replace('_001.unpaired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
 
-        stats = "Stats to " + filename + ":\n"
-        ss = "Split size: " + str(split_size) + "\n"
-        sn = "Number of splits: " + str(split_number) + "\n"
-        mt = "Mapping threads: " + str(mapping_threads) + "\n"
-        ch = "Checks: " + str(checks) + "\n"
-        init = "Init duration: " + time_difference(init_end - init_start) + "\n"
-        splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
-        mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
-        mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
-        cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
-        total = "Total duration: " + time_difference(cleanup_end - init_start) + "\n"
+    stats = "Stats to " + filename + ":\n"
+    ss = "Split size: " + str(split_size) + "\n"
+    sn = "Number of splits: " + str(split_number) + "\n"
+    mt = "Mapping threads: " + str(mapping_threads) + "\n"
+    ch = "Checks: " + str(checks) + "\n"
+    init = "Init duration: " + time_difference(init_end - init_start) + "\n"
+    splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
+    mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
+    mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
+    cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
+    total = "Total duration: " + time_difference(cleanup_end - init_start) + "\n"
 
-        dest.write(stats)
-        dest.write(ss)
-        dest.write(sn)
-        dest.write(mt)
-        dest.write(ch)
-        dest.write(init)
-        dest.write(splitten)
-        dest.write(mappen)
-        dest.write(mergen)
-        dest.write(cleanup)
-        dest.write(total)
+    dest.write(stats)
+    dest.write(ss)
+    dest.write(sn)
+    dest.write(mt)
+    dest.write(ch)
+    dest.write(init)
+    dest.write(splitten)
+    dest.write(mappen)
+    dest.write(mergen)
+    dest.write(cleanup)
+    dest.write(total)
 
-        dest.close()
+    dest.close()
 
 
 
@@ -733,36 +733,36 @@ for i in range(0, len(forward_files)):
                     print "removed"
 
 
-        cleanup_end = time.time()
+    cleanup_end = time.time()
 
 
-        dest = open(os.path.join(io_path, os.path.split(forward_files[i])[1].replace('_R1_001.paired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
+    dest = open(os.path.join(io_path, os.path.split(forward_files[i])[1].replace('_R1_001.paired.fastq', "_" + str(split_size) + "s_" + str(split_number) + "n_" + str(mapping_threads) + "t.txt")), 'w')
 
-        stats = "Stats to " + filename + ":\n"
-        ss = "Split size: " + str(split_size) + "\n"
-        sn = "Number of splits: " + str(split_number) + "\n"
-        mt = "Mapping threads: " + str(mapping_threads) + "\n"
-        ch = "Checks: " + str(checks) + "\n"
-        init = "Init duration: " + time_difference(init_end - init_start) + "\n"
-        splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
-        mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
-        mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
-        cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
-        total = "Total duration: " + time_difference(cleanup_end - init_start) + "\n"
+    stats = "Stats to " + filename + ":\n"
+    ss = "Split size: " + str(split_size) + "\n"
+    sn = "Number of splits: " + str(split_number) + "\n"
+    mt = "Mapping threads: " + str(mapping_threads) + "\n"
+    ch = "Checks: " + str(checks) + "\n"
+    init = "Init duration: " + time_difference(init_end - init_start) + "\n"
+    splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
+    mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
+    mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
+    cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
+    total = "Total duration: " + time_difference(cleanup_end - init_start) + "\n"
 
-        dest.write(stats)
-        dest.write(ss)
-        dest.write(sn)
-        dest.write(mt)
-        dest.write(ch)
-        dest.write(init)
-        dest.write(splitten)
-        dest.write(mappen)
-        dest.write(mergen)
-        dest.write(cleanup)
-        dest.write(total)
+    dest.write(stats)
+    dest.write(ss)
+    dest.write(sn)
+    dest.write(mt)
+    dest.write(ch)
+    dest.write(init)
+    dest.write(splitten)
+    dest.write(mappen)
+    dest.write(mergen)
+    dest.write(cleanup)
+    dest.write(total)
 
-        dest.close()
+    dest.close()
 
 
                     
