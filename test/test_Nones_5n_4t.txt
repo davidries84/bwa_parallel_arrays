@@ -1,0 +1,11 @@
+Stats to /prj/gf-rhizo/data/scripts/bwa_parallel/test/test_R1_001.paired.fastq:
+Split size: None
+Number of splits: 5
+Mapping threads: 4
+Checks: True
+Init duration: 0 day(s), 0 hour(s), 0 minute(s), 0.00758004188538 second(s) [0.00758004188538 seconds]
+Splitting duration: 0 day(s), 0 hour(s), 0 minute(s), 37.3131821156 second(s) [37.3131821156 seconds]
+Mapping duration: 0 day(s), 0 hour(s), 0 minute(s), 0.0442178249359 second(s) [0.0442178249359 seconds]
+Merging duration: 0 day(s), 0 hour(s), 0 minute(s), 17.8246130943 second(s) [17.8246130943 seconds]
+Clean up duration: 0 day(s), 0 hour(s), 0 minute(s), 0.00809502601624 second(s) [0.00809502601624 seconds]
+Total duration: 0 day(s), 0 hour(s), 0 minute(s), 55.1976881027 second(s) [55.1976881027 seconds]
