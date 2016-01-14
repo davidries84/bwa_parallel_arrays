@@ -47,9 +47,7 @@ def calcSplitLen(file, blocks, chunk = 4):
 
 def split_file(file,splitLen,split_dir):
         '''splits the file in files of length splitLen'''	
-	pathToSplitFiles = os.path.dirname(split_dir)
 	outfile = os.path.basename(file).replace('.fastq','_split_{0}.fastq')
-	outfile = os.path.join(pathToSplitFiles, outfile)
         outfiles = []
        
 
