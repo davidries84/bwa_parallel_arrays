@@ -275,7 +275,7 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
                 print "You have to specify -s or -n (positive int value)"
                 sys.exit()
 
-
+	# splitting
     # check optional (handle with care): 
 
     if checks == True and files_already_split == False and unpaired == False:
@@ -304,7 +304,7 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
         split_size = splitLen
         split_number = at
         print "split of file " + filename + " finished"
-    elif files_already_split == False  and unpaired == False:
+    elif files_already_split == False  and unpaired == False: # splitting paired files
         for line1 in input1:
             line2 = input2.readline()
             if count % splitLen == 0:
@@ -358,7 +358,6 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
 	
     else:
 	print "split failed"
-	sys.exit()
 	    
 
     os.chdir(os.pardir)
@@ -483,8 +482,8 @@ print unpaired_files
 
 # check for already existing bam files
 for filename in reversed(unpaired_files):
-    if os.path.exists(filename.replace('_R1_001.unpaired.fastq','_paired.bam')):
-        print "mapped file for " + filename + "already found"
+    if os.path.exists(filename.replace('_001.unpaired.fastq','_unpaired.bam')):
+        print "mapped file for " + filename + " already found"
         unpaired_files.remove(filename)
 
 
