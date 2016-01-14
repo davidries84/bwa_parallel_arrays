@@ -262,6 +262,7 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
                 filelength = int(out.split(" ")[0])
                 div = filelength / split_number
                 print "filelength: " + str(filelength)
+                print "lines per file: " +str(div)
                 if div < chunk:
                     splitLen = chunk
                 elif div % chunk == 0:
@@ -360,7 +361,7 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
 	print "split failed"
 	sys.exit()
 	    
-
+    sys.exit()
     os.chdir(os.pardir)
     return splitfiles # immer abwechselnd ein forward und ein reverse split file
 
@@ -557,7 +558,8 @@ for i in range(0, len(unpaired_files)):
     print "splitting. this may take some time... "
     splitfilesList = splitfiles(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files" , checks)
     splitten_end = time.time()
-	
+    print time_difference(splitten_end - init_end)
+    sys.exit()	
 
     # 2. mappen
     # Listen der splitted files
