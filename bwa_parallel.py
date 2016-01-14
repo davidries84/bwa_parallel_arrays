@@ -557,8 +557,6 @@ for i in range(0, len(unpaired_files)):
     print "splitting. this may take some time... "
     splitfilesList = splitfiles(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files" , checks)
     splitten_end = time.time()
-    print time_difference(splitten_end - init_end)
-    sys.exit()	
 
     # 2. mappen
     # Listen der splitted files
@@ -684,8 +682,6 @@ for i in range(0, len(forward_files)):
     print "splitting. this may take some time... "
     splitfilesList = splitfiles(forward_files[i], reverse_files[i], split_size, split_number,base_path+"/splitted_files" , checks)
     splitten_end = time.time()
-	
-
     # 2. mappen
     # Listen der splitted files
     print "mapping... "
