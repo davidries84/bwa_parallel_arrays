@@ -22,6 +22,43 @@ def grouper(n, iterable, fillvalue=None):
     return izip_longest(fillvalue=fillvalue, *args)
 
 
+def calcSplitLen(file, blocks, chunk = 4):
+        '''calculates the number of lines per block, for splitting file in number of blocks files of approx. eqal size. chunk is the number of lines that must not be split, for fastq files this is 4 = 4'''
+	# calc number of lines
+	print "Calculating file length"
+        cmd = "wc -l " + file # fastest way
+        p = Popen(cmd, stdout=PIPE, shell=True)
+        p.wait()
+        out, err = p.communicate()
+        filelength = int(out.split(" ")[0])
+        div = filelength / split_number # div =number of lines per split file
+        print "filelength: " + str(filelength)
+        if div < chunk:
+            splitLen = chunk
+        elif div % chunk == 0:
+            splitLen = div
+        else:
+            #mod = div % chunk
+            #add = chunk - mod
+            #splitLen = div + add
+            splitLen = div + chunk
+          
+        return splitLen
+
+def split_file(file,splitLen,split_dir):
+        '''splits the file in files of length splitLen'''	
+	outfile = os.path.basename(file).replace('.fastq','_split_{0}.fastq')
+        outfiles = []
+       
+	with open(file) as f:
+    		for i, g in enumerate(grouper(splitLen, f, fillvalue=''), 1):
+    			outfiles.append(outfile.format(i))
+        		with open(outfile.format(i), 'w') as fout:
+        			# B2444_ATCACG_L008_R1_001.paired.fastq
+        			# B2444_ATCACG_L008_R1_001.paired_split_40.fastq
+            			fout.writelines(g)
+	return outfiles
+
 def time_difference(sec):
     if sec < 60:
 	    return "0 day(s), 0 hour(s), 0 minute(s), " + str(sec) + " second(s) [" + str(sec) + " seconds]"
@@ -159,88 +196,30 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
             unpaired=True
             
     if unpaired == False:
-            filename1 = os.path.abspath(forward_file)
-            filename2 = os.path.abspath(reverse_file)
-            pathToFiles = os.path.dirname(filename1)
-            filename1 = os.path.basename(filename1)
-            filename2 = os.path.basename(filename2)
-            fileprefix1 = os.path.split(filename1.split(".")[0])
-            fileprefix2 = fileprefix1[1] + '.' + filename1.split(".")[1] + '_split_'
-            fileprefix3 = os.path.split(filename2.split(".")[0])
-            fileprefix4 = fileprefix3[1] + '.' + filename2.split(".")[1] + '_split_'
 
-            filename1 = os.path.join(pathToFiles,filename1)
-            filename2 = os.path.join(pathToFiles,filename2)
-
-            
             chunk = 4 # chunk length
-            fileprefix2 = os.path.join( os.getcwd(),fileprefix2)
-            fileprefix4 = os.path.join( os.getcwd(),fileprefix4)
-            
             splitfiles = []
-            
-            outputBase1 = fileprefix2
-            outputBase2 = fileprefix4
-            input1 = open(filename1, 'r')
-            input2 = open(filename2, 'r')
-            count = 0
-            at = 0
-            dest1 = None
-            dest2 = None
-
             files_already_split = False
 ### calculate split length/ number of lines for each split file
             if split_size > 0 and split_number > 1: 
                 print "You have to choose between -s and -n option"
                 sys.exit()
             elif split_size > 0:
-                splitLen = split_size # lines per file
-            elif split_number == (len(glob.glob(fileprefix2+"*.fastq")) + len(glob.glob(fileprefix4+"*.fastq"))) / 2:
+                div = split_size # lines per file
+            elif split_number == len(glob.glob(forward_file.replace('.fastq',"*.fastq"))) + len(glob.glob(reverse_file.replace('.fastq',"*.fastq"))) / 2:
                 files_already_split = True
             elif split_number > 0:
                 files_already_split = False
-                print "Calculating file length"
-                cmd = "wc -l " + forward_file # fastest way
-                #print cmd
-                p = Popen(cmd, stdout=PIPE, shell=True)
-                p.wait()
-                out, err = p.communicate()
-                filelength = int(out.split(" ")[0])
-                div = filelength / split_number # div =number of lines per split file
-                print "filelength: " + str(filelength)
+                div = calcSplitLen(forward_file, split_number)
+# div =number of lines per split file
+              
                 print "lines per split file: " + str(div)
-                if div < chunk:
-                    splitLen = chunk
-                elif div % chunk == 0:
-                    splitLen = div
-                else:
-                    #mod = div % chunk
-                    #add = chunk - mod
-                    #splitLen = div + add
-                    splitLen = div + chunk
+
             else:
                 print "You have to specify -s or -n (positive int value)"
                 sys.exit()
 
     if unpaired == True:
-            filename1 = os.path.abspath(forward_file)
-            pathToFiles = os.path.dirname(filename1)
-            filename1 = os.path.basename(filename1)
-            fileprefix1 = os.path.split(filename1.split(".")[0])
-            fileprefix2 = fileprefix1[1] + '.' + filename1.split(".")[1] + '_split_'
-
-            filename1 = os.path.join(pathToFiles,filename1)
-            
-            chunk = 4 # chunk length
-            fileprefix2 = os.path.join( os.getcwd(),fileprefix2)
-            
-            splitfiles = []
-            
-            outputBase1 = fileprefix2
-            input1 = open(filename1, 'r')
-            count = 0
-            at = 0
-            dest1 = None
 
             files_already_split = False
 
@@ -248,30 +227,14 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
                 print "You have to choose between -s and -n option"
                 sys.exit()
             elif split_size > 0:
-                splitLen = split_size # lines per file
-            elif split_number == (len(glob.glob(fileprefix2+"*.fastq"))):
+                div = split_size # lines per file
+            elif split_number == len(glob.glob(forward_file.replace('.fastq',"*.fastq"))):
                 files_already_split = True
             elif split_number > 0:
                 files_already_split = False
-                print "Calculating file length"
-                cmd = "wc -l " + forward_file # doesn't get any faster than that
-                #print cmd
-                p = Popen(cmd, stdout=PIPE, shell=True)
-                p.wait()
-                out, err = p.communicate()
-                filelength = int(out.split(" ")[0])
-                div = filelength / split_number
-                print "filelength: " + str(filelength)
-                print "lines per file: " +str(div)
-                if div < chunk:
-                    splitLen = chunk
-                elif div % chunk == 0:
-                    splitLen = div
-                else:
-                    #mod = div % chunk
-                    #add = chunk - mod
-                    #splitLen = div + add
-                    splitLen = div + chunk
+                div = calcSplitLen(forward_file, split_number)
+               
+                print "lines per split file: " + str(div)
             else:
                 print "You have to specify -s or -n (positive int value)"
                 sys.exit()
@@ -279,79 +242,27 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
 	# splitting
     # check optional (handle with care): 
 
-    if checks == True and files_already_split == False and unpaired == False:
-        for line1 in input1:
-            line2 = input2.readline()
-            if count % chunk == 0:
-                chunkok = False
-                if line1.startswith("@") and line2.startswith("@"):
-                    #print "chunk ok (" + str (count) + ")"
-                    if line1.split(" ")[0] == line2.split(" ")[0] and line1.split(" ")[1][1:] == line2.split(" ")[1][1:]:
-                        chunkok = True
-                        #print "samples matched"
-            if count % splitLen == 0 and chunkok:
-                if dest1: dest1.close()
-                dest1 = open(outputBase1 + str(at+1) + '.fastq', 'w')
-                splitfiles.append(outputBase1 + str(at+1) + '.fastq')
-                if dest2: dest2.close()
-                dest2 = open(outputBase2 + str(at+1) + '.fastq', 'w')
-                splitfiles.append(outputBase2 + str(at+1) + '.fastq')
-                at += 1
-            dest1.write(line1)
-            dest2.write(line2)
-            count += 1
-        dest1.close()
-        dest2.close()
-        split_size = splitLen
-        split_number = at
-        print "split of file " + filename + " finished"
-    elif files_already_split == False  and unpaired == False: # splitting paired files
-        for line1 in input1:
-            line2 = input2.readline()
-            if count % splitLen == 0:
-                if dest1: dest1.close()
-                dest1 = open(outputBase1 + str(at+1) + '.fastq', 'w')
-                splitfiles.append(outputBase1 + str(at+1) + '.fastq')
-                if dest2: dest2.close()
-                dest2 = open(outputBase2 + str(at+1) + '.fastq', 'w')
-                splitfiles.append(outputBase2 + str(at+1) + '.fastq')
-                at += 1
-            dest1.write(line1)
-            dest2.write(line2)
-            count += 1
-        dest1.close()
-        dest2.close()
-        split_size = splitLen
-        split_number = at
-        print "split of file " + filename + " finished"
-        
+    if files_already_split == False and unpaired == False:
+	splitforwfiles = split_file(forward_file,div,split_dir)
+        print "split of paired file " + forward_file + " finished"
+      	splitrevfiles = split_file(reverse_file,div,split_dir)
+        print "split of paired file " + reverse_file + " finished"
+        splitfiles = zip(splitforwfiles, splitrevfiles)
+
     elif files_already_split == False  and unpaired == True:
-        for line1 in input1:
+	splitfiles = split_file(forward_file,div,split_dir)
+        print "split of unpaired file " + forward_file + " finished"
 
-            if count % splitLen == 0:
-                if dest1: dest1.close()
-                dest1 = open(outputBase1 + str(at+1) + '.fastq', 'w')
-                splitfiles.append(outputBase1 + str(at+1) + '.fastq')
-
-                at += 1
-            dest1.write(line1)
-
-            count += 1
-        dest1.close()
-
-        split_size = splitLen
-        split_number = at
-        print "split of file " + filename1 + " finished"
 
         
         
     elif files_already_split == True and unpaired == False :
-	splitfiles = zip(glob.glob(fileprefix2+"*.fastq"), glob.glob(fileprefix4+"*.fastq"))
+	splitfiles = zip(glob.glob(forward_file.replace('.fastq',"*.fastq")), glob.glob(reverse_file.replace('.fastq',"*.fastq")))
 	splitfiles = [j for i in splitfiles for j in i]
 	print "Found already split files:"
 	print splitfiles
     elif files_already_split == True and unpaired == True :
-	splitfiles = glob.glob(fileprefix2+"*.fastq")
+	splitfiles = glob.glob(forward_file.replace('.fastq',"*.fastq"))
 
 	print "Found already split files:"
 	print splitfiles
@@ -552,11 +463,14 @@ for i in range(0, len(unpaired_files)):
     if not os.path.exists(base_path+"/sorted_mapped_files"):
         os.mkdir(base_path+"/sorted_mapped_files", 0755)
 
-    
+    splitten_start = time.time()
     # 1. splitten
     print "splitting. this may take some time... "
     splitfilesList = splitfiles(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files" , checks)
+    #splitfilesList = splitfile(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files" , checks)
+    
     splitten_end = time.time()
+    print "Time for split: " + str(time_difference(splitten_end - splitten_start))
 
     # 2. mappen
     # Listen der splitted files
@@ -677,24 +591,27 @@ for i in range(0, len(forward_files)):
     if not os.path.exists(base_path+"/sorted_mapped_files"):
         os.mkdir(base_path+"/sorted_mapped_files", 0755)
 
-    
+    splitten_start = time.time()
     # 1. splitten
     print "splitting. this may take some time... "
     splitfilesList = splitfiles(forward_files[i], reverse_files[i], split_size, split_number,base_path+"/splitted_files" , checks)
     splitten_end = time.time()
+    print "Time for splitting: " + str(time_difference(splitten_end - splitten_start))
+    
+
     # 2. mappen
     # Listen der splitted files
     print "mapping... "
     
-    array_job_ID, path_to_mapped_files = write_array_file(bwa_path, "/vol/biotools/bin/samtools", reference, forward_files[i], base_path+"/splitted_files", mapping_threads, len(splitfilesList)/2)
+    array_job_ID, path_to_mapped_files = write_array_file(bwa_path, "/vol/biotools/bin/samtools", reference, forward_files[i], base_path+"/splitted_files", mapping_threads, len(splitfilesList))
     mappen_end = time.time()
 
 
     # 3. mergen
     
     mappedFilesList =  []
-    for j in range(0,len(splitfilesList),2):
-	    mappedFilesList.append(os.path.join(path_to_mapped_files , splitfilesList[j].replace('.fastq','.bam')))
+    for j in range(0,len(splitfilesList)):
+	    mappedFilesList.append(os.path.join(path_to_mapped_files , splitfilesList[j][0].replace('.fastq','.bam')))
 	    
     merged_bam = mergeBams("/vol/biotools/bin/samtools", forward_files[i] , mappedFilesList ,array_job_ID)
     print "merged bams to : " + merged_bam
