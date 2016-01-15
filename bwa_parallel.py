@@ -50,9 +50,6 @@ def split_file(file,splitLen,split_dir):
 	outfile = os.path.basename(file).replace('.fastq','_split_{0}.fastq')
         outfiles = []
        
-
-	print "lines per split file: " + str(splitLen)
-
 	with open(file) as f:
     		for i, g in enumerate(grouper(splitLen, f, fillvalue=''), 1):
     			outfiles.append(outfile.format(i))
@@ -261,12 +258,12 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
         
         
     elif files_already_split == True and unpaired == False :
-	splitfiles = zip(glob.glob(forward_file.replace('.fastq')+"*.fastq")) + len(glob.glob(reverse_file.replace('.fastq')+"*.fastq"))
+	splitfiles = zip(glob.glob(forward_file.replace('.fastq',"*.fastq")), glob.glob(reverse_file.replace('.fastq',"*.fastq")))
 	splitfiles = [j for i in splitfiles for j in i]
 	print "Found already split files:"
 	print splitfiles
     elif files_already_split == True and unpaired == True :
-	splitfiles = glob.glob(forward_file.replace('.fastq')+"*.fastq")
+	splitfiles = glob.glob(forward_file.replace('.fastq',"*.fastq"))
 
 	print "Found already split files:"
 	print splitfiles
@@ -474,8 +471,8 @@ for i in range(0, len(unpaired_files)):
     #splitfilesList = splitfile(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files" , checks)
     
     splitten_end = time.time()
-    print str(time_difference(splitten_end - splitten_start))
-    sys.exit()
+    print "Time for split: " + str(time_difference(splitten_end - splitten_start))
+    
     # 2. mappen
     # Listen der splitted files
     print "mapping... "
@@ -600,22 +597,22 @@ for i in range(0, len(forward_files)):
     print "splitting. this may take some time... "
     splitfilesList = splitfiles(forward_files[i], reverse_files[i], split_size, split_number,base_path+"/splitted_files" , checks)
     splitten_end = time.time()
-    print str(time_difference(splitten_end - splitten_start))
-    sys.exit()
+    print "Time for splitting: " + str(time_difference(splitten_end - splitten_start))
+    
 
     # 2. mappen
     # Listen der splitted files
     print "mapping... "
     
-    array_job_ID, path_to_mapped_files = write_array_file(bwa_path, "/vol/biotools/bin/samtools", reference, forward_files[i], base_path+"/splitted_files", mapping_threads, len(splitfilesList)/2)
+    array_job_ID, path_to_mapped_files = write_array_file(bwa_path, "/vol/biotools/bin/samtools", reference, forward_files[i], base_path+"/splitted_files", mapping_threads, len(splitfilesList))
     mappen_end = time.time()
 
 
     # 3. mergen
     
     mappedFilesList =  []
-    for j in range(0,len(splitfilesList),2):
-	    mappedFilesList.append(os.path.join(path_to_mapped_files , splitfilesList[j].replace('.fastq','.bam')))
+    for j in range(0,len(splitfilesList)):
+	    mappedFilesList.append(os.path.join(path_to_mapped_files , splitfilesList[j][0].replace('.fastq','.bam')))
 	    
     merged_bam = mergeBams("/vol/biotools/bin/samtools", forward_files[i] , mappedFilesList ,array_job_ID)
     print "merged bams to : " + merged_bam
