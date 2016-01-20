@@ -100,16 +100,16 @@ def write_array_file(path_to_bwa, path_to_samtools, path_to_reference, split_fil
 	# cmd = qsub -t 1-n -N mapping -vf 8G -l arch=lx24-amd64 -cwd -pe multislot "Threads"-e " + error_log + " -o output mapping_array.csh
 	#calculate memory requirements
 	virtualMem = int(8)/int(threads)
-	cmd = "qsub -t 1-" + str(int(splits)) + " -N mapping  -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
+	cmd = "qsub -t 1-" + str(int(splits)) + " -N mapping  -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -sync y -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
         p = Popen(cmd, shell=True, stdin=PIPE,stdout=PIPE)
         array_job_ID = p.communicate()[0].split()[2] # save the job ID 
 	print "submitted " 
 	print cmd
 	print "with Job ID: " + 	array_job_ID
-	#p.wait() # wait for the array to finish
+#	p.wait() # wait for the array to finish
 	path_to_mapped_files = os.path.dirname(bamFile)
 	
-	return array_job_ID.split('.')[0], path_to_mapped_files
+	return array_job_ID.split('.')[0], path_to_mapped_files, p
 
 def write_array_file_singlereads(path_to_bwa, path_to_samtools, path_to_reference, name_split_file, path_to_splitFiles, threads, number_splits):
 	'''create and write the array file containing the commands to map fastq files to a reference creating bams. split_file only defines the filename.'''
@@ -146,19 +146,19 @@ def write_array_file_singlereads(path_to_bwa, path_to_samtools, path_to_referenc
 	# cmd = qsub -t 1-n -N mapping -vf 8G -l arch=lx24-amd64 -cwd -pe multislot "Threads"-e " + error_log + " -o output mapping_array.csh
 	#calculate memory requirements
 	virtualMem = int(8)/int(threads)
-	cmd = "qsub -t 1-" + str(int(number_splits)) + " -N mapping  -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
+	cmd = "qsub -t 1-" + str(int(number_splits)) + " -N mapping  -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -sync y -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
         p = Popen(cmd, shell=True, stdin=PIPE,stdout=PIPE)
         array_job_ID = p.communicate()[0].split()[2] # save the job ID 
 	print "submitted " 
 	print cmd
 	print "with Job ID: " + 	array_job_ID
-	#p.wait() # wait for the array to finish
+#	p.wait() # wait for the array to finish
 	path_to_mapped_files = os.path.dirname(bamFile1)
 	
-	return array_job_ID.split('.')[0], path_to_mapped_files
+	return array_job_ID.split('.')[0], path_to_mapped_files, p
 	
 	
-def mergeBams(path_to_samtools, split_file, mappedFilesList ,array_job_ID):
+def mergeBams(path_to_samtools, split_file, mappedFilesList ,array_job_ID, mapping_process):
     """merges all bam files MappedFilesList into one"""
     if "unpaired" in split_file:
         final_file = split_file.replace('_001.unpaired.fastq','_unpaired.bam')
@@ -166,11 +166,15 @@ def mergeBams(path_to_samtools, split_file, mappedFilesList ,array_job_ID):
     else:
         final_file = split_file.replace('_R1_001.paired.fastq','_paired.bam')
     if len(mappedFilesList) == 0:
-            print "no splits ->  no merging"
+            print "no mapped files ->  exiting"
+            sys.exit()
+
     elif len(mappedFilesList) == 1:
-            cmd = "cp " + mappedFilesList[0] + " " + final_files[0]
+            print 'waiting for mapping to finish'
+            mapping_process.wait()
+            cmd = "cp " + mappedFilesList[0] + " " + final_file
             print cmd
-            print "merge not needed. copying mapped file"
+            print "merge not needed. waiting for mapping to finish and copying mapped file"
             p = Popen(cmd, shell=True)
             p.wait()
     else:
@@ -190,7 +194,7 @@ def mergeBams(path_to_samtools, split_file, mappedFilesList ,array_job_ID):
 def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, checks = True, chunk = 4):
     """splits fastq files in mappable chunks. for unpaired reads, leave reverse_file empty."""
     os.chdir(split_dir) # cd to the directory where the split files will be created
-
+    splitfiles = []
     unpaired = False
     if reverse_file == []:
             unpaired=True
@@ -206,7 +210,28 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
                 sys.exit()
             elif split_size > 0:
                 div = split_size # lines per file
-            elif split_number == len(glob.glob(forward_file.replace('.fastq',"*.fastq"))) + len(glob.glob(reverse_file.replace('.fastq',"*.fastq"))) / 2:
+            elif split_number == 1: ## if no split, create a symbolic link, to save the wc and the copying, but keep compatibility
+                forw_sym = os.path.join(os.getcwd(),os.path.basename(forward_file.replace('.fastq','_split_1.fastq')))
+                rev_sym = os.path.join(os.getcwd(),os.path.basename(reverse_file.replace('.fastq','_split_1.fastq')))
+
+                print 'Split number is 1. Setting symbolic links instead of splitting.'
+                print forw_sym
+                print rev_sym
+
+
+                if not os.path.islink(forw_sym):
+                    os.symlink(forward_file, forw_sym)
+                else:
+                    print "link to forward file already exists, using old sym_link"
+
+                if not os.path.islink(rev_sym):
+                    os.symlink(reverse_file, rev_sym)
+                else:
+                    print "link to reverse file already exists, using old sym_link"
+
+                splitfiles=[forw_sym,rev_sym]
+                return splitfiles
+            elif split_number == len(glob.glob(forward_file.replace('.fastq',"*split*.fastq"))) + len(glob.glob(reverse_file.replace('.fastq',"*split*.fastq"))) / 2:
                 files_already_split = True
             elif split_number > 0:
                 files_already_split = False
@@ -228,7 +253,19 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
                 sys.exit()
             elif split_size > 0:
                 div = split_size # lines per file
-            elif split_number == len(glob.glob(forward_file.replace('.fastq',"*.fastq"))):
+            elif split_number == 1: ## if no split, create a symbolic link, to save the wc and the copying, but keep compatibility
+                forw_sym = os.path.join(os.getcwd(),os.path.basename(forward_file.replace('.fastq','_split_1.fastq')))
+                print 'Split number is 1. Setting symbolic link instead of splitting.'
+                print forw_sym
+                if not os.path.islink(forw_sym):
+                    os.symlink(forward_file, forw_sym)
+                else:
+                    print "link already exists, using old sym_link"
+                
+                splitfiles.append(forw_sym)
+                return splitfiles
+
+            elif split_number == len(glob.glob(forward_file.replace('.fastq',"*split*.fastq"))):
                 files_already_split = True
             elif split_number > 0:
                 files_already_split = False
@@ -240,29 +277,29 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
                 sys.exit()
 
 	# splitting
-    # check optional (handle with care): 
+    # check optional (handle with care) not implemented: 
 
     if files_already_split == False and unpaired == False:
 	splitforwfiles = split_file(forward_file,div,split_dir)
         print "split of paired file " + forward_file + " finished"
       	splitrevfiles = split_file(reverse_file,div,split_dir)
         print "split of paired file " + reverse_file + " finished"
-        splitfiles = zip(splitforwfiles, splitrevfiles)
+        for i, (a,b) in enumerate( zip(splitforwfiles, splitrevfiles)):
+            splitfiles.append(a)
+            splitfiles.append(b)
 
     elif files_already_split == False  and unpaired == True:
 	splitfiles = split_file(forward_file,div,split_dir)
         print "split of unpaired file " + forward_file + " finished"
-
-
-        
+       
         
     elif files_already_split == True and unpaired == False :
-	splitfiles = zip(glob.glob(forward_file.replace('.fastq',"*.fastq")), glob.glob(reverse_file.replace('.fastq',"*.fastq")))
+	splitfiles = zip(glob.glob(forward_file.replace('.fastq',"*split*.fastq")), glob.glob(reverse_file.replace('.fastq',"*split*.fastq")))
 	splitfiles = [j for i in splitfiles for j in i]
 	print "Found already split files:"
 	print splitfiles
     elif files_already_split == True and unpaired == True :
-	splitfiles = glob.glob(forward_file.replace('.fastq',"*.fastq"))
+	splitfiles = glob.glob(forward_file.replace('.fastq',"*split*.fastq"))
 
 	print "Found already split files:"
 	print splitfiles
@@ -271,7 +308,6 @@ def splitfiles(forward_file, reverse_file, split_size, split_number, split_dir, 
     else:
 	print "split failed"
 	    
-    sys.exit()
     os.chdir(os.pardir)
     return splitfiles # immer abwechselnd ein forward und ein reverse split file
 
@@ -450,7 +486,6 @@ for i in range(0, len(unpaired_files)):
     if not os.path.exists(base_path+"/splitted_files"):
         os.mkdir(base_path+"/splitted_files", 0755)
 
-
     # Directory fuer sam files erstellen
     if not os.path.exists(base_path+"/sam_files"):
         os.mkdir(base_path+"/sam_files", 0755)
@@ -466,9 +501,9 @@ for i in range(0, len(unpaired_files)):
     splitten_start = time.time()
     # 1. splitten
     print "splitting. this may take some time... "
-    splitfilesList = splitfiles(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files" , checks)
-    #splitfilesList = splitfile(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files" , checks)
-    
+    splitfilesList = splitfiles(unpaired_files[i], [], split_size, split_number,base_path+"/splitted_files/" , checks)
+    print 'split files to:'
+    print splitfilesList
     splitten_end = time.time()
     print "Time for split: " + str(time_difference(splitten_end - splitten_start))
 
@@ -476,17 +511,23 @@ for i in range(0, len(unpaired_files)):
     # Listen der splitted files
     print "mapping... "
     
-    array_job_ID, path_to_mapped_files = write_array_file_singlereads(bwa_path, "/vol/biotools/bin/samtools", reference, unpaired_files[i], base_path+"/splitted_files", mapping_threads, len(splitfilesList))
+    array_job_ID, path_to_mapped_files, mapping_process = write_array_file_singlereads(bwa_path, "/vol/biotools/bin/samtools", reference, unpaired_files[i], base_path+"/splitted_files", mapping_threads, len(splitfilesList))
     mappen_end = time.time()
 
+    print 'files mapped to:'
+    print path_to_mapped_files
 
     # 3. mergen
     
     mappedFilesList =  []
-    for j in range(0,len(splitfilesList)-1):
+    for j in range(0,len(splitfilesList)):
 	    mappedFilesList.append(os.path.join(path_to_mapped_files , splitfilesList[j].replace('.fastq','.bam')))
+
+    print 'files mapped to:'
+    print mappedFilesList
+
 	    
-    merged_bam = mergeBams("/vol/biotools/bin/samtools", unpaired_files[i] , mappedFilesList ,array_job_ID)
+    merged_bam = mergeBams("/vol/biotools/bin/samtools", unpaired_files[i] , mappedFilesList ,array_job_ID, mapping_process)
     print "merged bams to : " + merged_bam
     mergen_end = time.time()
 
@@ -539,7 +580,7 @@ for i in range(0, len(unpaired_files)):
     mt = "Mapping threads: " + str(mapping_threads) + "\n"
     ch = "Checks: " + str(checks) + "\n"
     init = "Init duration: " + time_difference(init_end - init_start) + "\n"
-    splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
+    splitten = "Splitting duration: " + time_difference(splitten_end - splitten_start) + "\n"
     mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
     mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
     cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
@@ -565,7 +606,7 @@ for i in range(0, len(unpaired_files)):
 ### mapping paired-end files
 
 for i in range(0, len(forward_files)):
-
+    init_start = time.time()
     print "processing: "
     print forward_files[i]
     print reverse_files[i]
@@ -594,7 +635,7 @@ for i in range(0, len(forward_files)):
     splitten_start = time.time()
     # 1. splitten
     print "splitting. this may take some time... "
-    splitfilesList = splitfiles(forward_files[i], reverse_files[i], split_size, split_number,base_path+"/splitted_files" , checks)
+    splitfilesList = splitfiles(forward_files[i], reverse_files[i], split_size, split_number,base_path+"/splitted_files/" , checks)
     splitten_end = time.time()
     print "Time for splitting: " + str(time_difference(splitten_end - splitten_start))
     
@@ -603,17 +644,23 @@ for i in range(0, len(forward_files)):
     # Listen der splitted files
     print "mapping... "
     
-    array_job_ID, path_to_mapped_files = write_array_file(bwa_path, "/vol/biotools/bin/samtools", reference, forward_files[i], base_path+"/splitted_files", mapping_threads, len(splitfilesList))
+    array_job_ID, path_to_mapped_files, mapping_process = write_array_file(bwa_path, "/vol/biotools/bin/samtools", reference, forward_files[i], base_path+"/splitted_files/", mapping_threads, len(splitfilesList)/2)
     mappen_end = time.time()
 
 
     # 3. mergen
     
     mappedFilesList =  []
-    for j in range(0,len(splitfilesList)):
-	    mappedFilesList.append(os.path.join(path_to_mapped_files , splitfilesList[j][0].replace('.fastq','.bam')))
+    for j in range(0,len(splitfilesList),2):
+        print path_to_mapped_files
+        print splitfilesList[j]
+        print splitfilesList[j].replace('.fastq','.bam')
+	mappedFilesList.append(os.path.join(path_to_mapped_files , splitfilesList[j].replace('.fastq','.bam')))
+
+    print 'files mapped to:'
+    print mappedFilesList
 	    
-    merged_bam = mergeBams("/vol/biotools/bin/samtools", forward_files[i] , mappedFilesList ,array_job_ID)
+    merged_bam = mergeBams("/vol/biotools/bin/samtools", forward_files[i] , mappedFilesList ,array_job_ID, mapping_process)
     print "merged bams to : " + merged_bam
     mergen_end = time.time()
 
@@ -666,7 +713,7 @@ for i in range(0, len(forward_files)):
     mt = "Mapping threads: " + str(mapping_threads) + "\n"
     ch = "Checks: " + str(checks) + "\n"
     init = "Init duration: " + time_difference(init_end - init_start) + "\n"
-    splitten = "Splitting duration: " + time_difference(splitten_end - init_end) + "\n"
+    splitten = "Splitting duration: " + time_difference(splitten_end - splitten_start) + "\n"
     mappen = "Mapping duration: " + time_difference(mappen_end - splitten_end) + "\n"
     mergen = "Merging duration: " + time_difference(mergen_end - mappen_end) + "\n"
     cleanup = "Clean up duration: " + time_difference(cleanup_end - mergen_end) + "\n"
