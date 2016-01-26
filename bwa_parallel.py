@@ -100,7 +100,7 @@ def write_array_file(path_to_bwa, path_to_samtools, path_to_reference, split_fil
 	# cmd = qsub -t 1-n -N mapping -vf 8G -l arch=lx24-amd64 -cwd -pe multislot "Threads"-e " + error_log + " -o output mapping_array.csh
 	#calculate memory requirements
 	virtualMem = int(8)/int(threads)
-	cmd = "qsub -t 1-" + str(int(splits)) + " -N mapping  -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -sync y -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
+	cmd = "qsub -t 1-" + str(int(splits)) + " -N mapping -l idle=1 -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -sync y -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
         p = Popen(cmd, shell=True, stdin=PIPE,stdout=PIPE)
         array_job_ID = p.communicate()[0].split()[2] # save the job ID 
 	print "submitted " 
@@ -146,7 +146,7 @@ def write_array_file_singlereads(path_to_bwa, path_to_samtools, path_to_referenc
 	# cmd = qsub -t 1-n -N mapping -vf 8G -l arch=lx24-amd64 -cwd -pe multislot "Threads"-e " + error_log + " -o output mapping_array.csh
 	#calculate memory requirements
 	virtualMem = int(8)/int(threads)
-	cmd = "qsub -t 1-" + str(int(number_splits)) + " -N mapping  -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -sync y -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
+	cmd = "qsub -t 1-" + str(int(number_splits)) + " -N mapping -l idle=1 -l arch=lx24-amd64,vf=" + str(virtualMem) + "G -cwd -sync y -pe multislot " + str(threads) + " -e  error_log  mapping_array.csh"
         p = Popen(cmd, shell=True, stdin=PIPE,stdout=PIPE)
         array_job_ID = p.communicate()[0].split()[2] # save the job ID 
 	print "submitted " 
