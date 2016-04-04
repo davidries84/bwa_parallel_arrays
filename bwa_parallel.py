@@ -78,7 +78,7 @@ def write_array_file(path_to_bwa, path_to_samtools, path_to_reference, split_fil
 	fw_splitted_files = os.path.join(path_to_splitFiles,filename.replace('.fastq','_split_$1.fastq'))
 	rv_splitted_files = fw_splitted_files.replace('R1','R2')
 	bamFile = os.path.join(os.path.dirname(fw_splitted_files) ,os.path.basename(fw_splitted_files).replace('.fastq', '.bam'))
-	mapping_cmd = path_to_bwa + " mem -M  -t " + str(threads) + " " + path_to_reference + " " + os.path.abspath(fw_splitted_files) + " " + os.path.abspath(rv_splitted_files) + " | " + "/vol/biotools/bin/samtools view -bS - |  /vol/biotools/bin/samtools sort -m 200000000 - " +  bamFile.replace('.bam','')
+	mapping_cmd = path_to_bwa + " mem -M  -t " + str(threads) + " " + path_to_reference + " " + os.path.abspath(fw_splitted_files) + " " + os.path.abspath(rv_splitted_files) + " | " + "/vol/biotools/bin/samtools view -bS - |  /vol/biotools/bin/samtools sort -m 200000000 - -o " +  bamFile
 
 	#writing shell script
 	filehandle = open('mapping.sh','w')
